@@ -24,20 +24,14 @@ namespace Chat
         {
             busControl = Bus.Factory.CreateUsingRabbitMq(sbc =>
             {
-                ConfiguracaoRabbitMQ config = ObterConfiguracoesRabbitMQ();
+                var config = ObterConfiguracoesRabbitMQ();
 
                 var host = sbc.Host(new Uri(config.Servidor), h =>
                 {
                     h.Username(config.Usuario);
                     h.Password(config.Senha);
                 });
-
-                //var host = sbc.Host(new Uri("rabbitmq://localhost"), h =>
-                //{
-                //    h.Username("guest");
-                //    h.Password("guest");
-                //});
-
+                
                 sbc.AutoDelete = true;
                 sbc.ReceiveEndpoint(host, $"{guid.ToString()}", e =>
                 {
@@ -55,15 +49,6 @@ namespace Chat
                         richTextBox.Invoke((MethodInvoker)delegate
                         {
                             EscreverMensagem(context.Message.Mensagem);
-                        });
-                        return Task.FromResult(0);
-                    });
-
-                    e.Handler<MensagemEntrada>(context =>
-                    {
-                        richTextBox.Invoke((MethodInvoker)delegate
-                        {
-                            EscreverMensagem("Escrevendo");
                         });
                         return Task.FromResult(0);
                     });
@@ -92,7 +77,7 @@ namespace Chat
 
             //sendEndpoint.Send(new Mensagem(guid, input_textBox.Text));
 
-            busControl.Publish(new Mensagem(guid, $"GUID {guid} entrou na sala"));
+            busControl.Publish(new Mensagem(guid, input_textBox.Text));
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -103,11 +88,6 @@ namespace Chat
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             busControl.Stop();
-        }
-
-        private void InputTextBoxOnGotFocus(object sender, EventArgs eventArgs)
-        {
-            busControl.Publish(new MensagemEscrevendo());
         }
     }
 }

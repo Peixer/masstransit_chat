@@ -60,7 +60,6 @@
             this.input_textBox.Name = "input_textBox";
             this.input_textBox.Size = new System.Drawing.Size(564, 20);
             this.input_textBox.TabIndex = 2;
-            this.input_textBox.GotFocus += InputTextBoxOnGotFocus;
             // 
             // label1
             // 
