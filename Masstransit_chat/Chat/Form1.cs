@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Chat.Core;
@@ -23,11 +24,19 @@ namespace Chat
         {
             busControl = Bus.Factory.CreateUsingRabbitMq(sbc =>
             {
-                var host = sbc.Host(new Uri("rabbitmq://localhost"), h =>
+                ConfiguracaoRabbitMQ config = ObterConfiguracoesRabbitMQ();
+
+                var host = sbc.Host(new Uri(config.Servidor), h =>
                 {
-                    h.Username("guest");
-                    h.Password("guest");
+                    h.Username(config.Usuario);
+                    h.Password(config.Senha);
                 });
+
+                //var host = sbc.Host(new Uri("rabbitmq://localhost"), h =>
+                //{
+                //    h.Username("guest");
+                //    h.Password("guest");
+                //});
 
                 sbc.AutoDelete = true;
                 sbc.ReceiveEndpoint(host, $"{guid.ToString()}", e =>
@@ -36,7 +45,7 @@ namespace Chat
                     {
                         richTextBox.Invoke((MethodInvoker)delegate
                         {
-                            richTextBox.AppendText($"{context.Message.Guid}:{context.Message.Mensagem_Enviada}\n");
+                            EscreverMensagem($"{context.Message.Guid}:{context.Message.Mensagem_Enviada}");
                         });
                         return Task.FromResult(0);
                     });
@@ -45,7 +54,7 @@ namespace Chat
                     {
                         richTextBox.Invoke((MethodInvoker)delegate
                         {
-                            richTextBox.AppendText(context.Message.Mensagem + "\n");
+                            EscreverMensagem(context.Message.Mensagem);
                         });
                         return Task.FromResult(0);
                     });
@@ -54,7 +63,7 @@ namespace Chat
                     {
                         richTextBox.Invoke((MethodInvoker)delegate
                         {
-                            richTextBox.AppendText("Escrevendo");
+                            EscreverMensagem("Escrevendo");
                         });
                         return Task.FromResult(0);
                     });
@@ -63,11 +72,27 @@ namespace Chat
             busControl.Start();
         }
 
+        private ConfiguracaoRabbitMQ ObterConfiguracoesRabbitMQ()
+        {
+            string servidor = ConfigurationManager.AppSettings["servidor"];
+            string usuario = ConfigurationManager.AppSettings["usuario"];
+            string senha = ConfigurationManager.AppSettings["senha"];
+
+            return new ConfiguracaoRabbitMQ(servidor, usuario, senha);
+        }
+
+        private void EscreverMensagem(string mensagem)
+        {
+            richTextBox.AppendText($"{mensagem} \n");
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
-            var sendEndpoint = busControl.GetSendEndpoint(new Uri($"rabbitmq://localhost:5672/{guid}")).Result;
+            //var sendEndpoint = busControl.GetSendEndpoint(new Uri($"rabbitmq://localhost:5672/{guid}")).Result;
 
-            sendEndpoint.Send(new Mensagem(guid, input_textBox.Text));
+            //sendEndpoint.Send(new Mensagem(guid, input_textBox.Text));
+
+            busControl.Publish(new Mensagem(guid, $"GUID {guid} entrou na sala"));
         }
 
         private void Form1_Load(object sender, EventArgs e)
